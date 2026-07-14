@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slice & Learn — Fraction Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --crust:#C97B3D;
+    --crust-dark:#A45F29;
+    --tomato:#E8543E;
+    --tomato-dark:#C33F2C;
+    --basil:#3F7859;
+    --cheese:#F4B942;
+    --cream:#FFF8ED;
+    --ink:#2B2118;
+    --ink-soft:#5A4A3C;
+    --paper:#FFFFFF;
+    --shadow: rgba(43,33,24,0.18);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 12% 15%, rgba(244,185,66,0.35), transparent 45%),
+      radial-gradient(circle at 88% 85%, rgba(232,84,62,0.22), transparent 50%),
+      var(--cream);
+    font-family:'Nunito', sans-serif;
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px 16px;
+  }
+  .stage{
+    width:100%;
+    max-width:920px;
+    background:var(--paper);
+    border-radius:28px;
+    box-shadow: 0 20px 50px var(--shadow);
+    overflow:hidden;
+    border:2px solid rgba(43,33,24,0.06);
+  }
+  header{
+    padding:26px 32px 18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    border-bottom:2px dashed rgba(201,123,61,0.35);
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .brand-mark{
+    width:44px;height:44px;border-radius:50%;
+    background: conic-gradient(var(--tomato) 0turn 0.72turn, var(--cheese) 0.72turn 1turn);
+    border:3px solid var(--crust);
+    flex-shrink:0;
+  }
+  .brand h1{
+    font-family:'Fredoka', sans-serif;
+    font-size:22px;
+    margin:0;
+    line-height:1.1;
+  }
+  .brand p{
+    margin:2px 0 0;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-weight:700;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+  }
+  .score{
+    text-align:right;
+    font-weight:800;
+  }
+  .score .num{
+    font-family:'Fredoka',sans-serif;
+    font-size:26px;
+    color:var(--tomato-dark);
+  }
+  .score .lbl{
+    font-size:11px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+  }
+  main{
+    padding:28px 32px 32px;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:28px;
+    align-items:center;
+  }
+  @media (max-width:680px){
+    main{grid-template-columns:1fr; gap:20px;}
+    header{padding:20px 20px 14px;}
+    main{padding:20px;}
+  }
+  .plate-wrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+  }
+  .target-line{
+    font-family:'Fredoka', sans-serif;
+    font-size:15px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+  .target-line b{
+    color:var(--tomato-dark);
+    font-size:20px;
+  }
+  .plate{
+    position:relative;
+    width:min(280px, 62vw);
+    aspect-ratio:1/1;
+  }
+  .plate svg{ width:100%; height:100%; display:block; filter: drop-shadow(0 10px 18px var(--shadow)); }
+  .slice{
+    cursor:pointer;
+    transition: fill .18s ease, transform .18s ease;
+    transform-origin:150px 150px;
+  }
+  .slice:hover{ filter:brightness(1.05); }
+  .center-hole{ fill:var(--paper); }
+  .fraction-readout{
+    font-family:'Fredoka', sans-serif;
+    font-size:34px;
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .fraction-readout .bar{ display:flex; flex-direction:column; align-items:center; line-height:1; }
+  .fraction-readout .bar .rule{ width:34px; height:3px; background:var(--ink); margin:2px 0; border-radius:2px;}
+  .controls{
+    display:flex;
+    gap:14px;
+  }
+  .btn{
+    font-family:'Fredoka', sans-serif;
+    font-size:15px;
+    font-weight:600;
+    border:none;
+    border-radius:14px;
+    padding:12px 22px;
+    cursor:pointer;
+    color:var(--paper);
+    box-shadow: 0 6px 0 rgba(0,0,0,0.15);
+    transition: transform .08s ease, box-shadow .08s ease;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .btn:active{ transform:translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,0.15); }
+  .btn.add{ background:var(--basil); }
+  .btn.remove{ background:var(--tomato); }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; box-shadow:0 6px 0 rgba(0,0,0,0.08); }
+  .panel{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  .panel h2{
+    font-family:'Fredoka', sans-serif;
+    font-size:19px;
+    margin:0;
+  }
+  .panel p.sub{
+    margin:2px 0 0;
+    font-size:13.5px;
+    color:var(--ink-soft);
+    font-weight:600;
+  }
+  .check-btn{
+    font-family:'Fredoka', sans-serif;
+    font-size:17px;
+    font-weight:700;
+    background:var(--crust);
+    color:var(--paper);
+    border:none;
+    border-radius:16px;
+    padding:14px 20px;
+    cursor:pointer;
+    box-shadow:0 6px 0 var(--crust-dark);
+    transition: transform .08s ease, box-shadow .08s ease;
+  }
+  .check-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 var(--crust-dark); }
+  .feedback{
+    min-height:64px;
+    border-radius:16px;
+    padding:14px 16px;
+    font-weight:700;
+    font-size:14.5px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    transition: background .2s ease, color .2s ease;
+    background:rgba(43,33,24,0.05);
+    color:var(--ink-soft);
+  }
+  .feedback.good{ background:rgba(63,120,89,0.14); color:var(--basil); }
+  .feedback.bad{ background:rgba(232,84,62,0.12); color:var(--tomato-dark); }
+  .feedback .icon{ font-size:22px; }
+  .levelbar{
+    display:flex;
+    gap:6px;
+  }
+  .levelbar .dot{
+    flex:1;
+    height:7px;
+    border-radius:4px;
+    background:rgba(201,123,61,0.22);
+  }
+  .levelbar .dot.done{ background:var(--basil); }
+  .levelbar .dot.current{ background:var(--cheese); }
+  .mute-btn{
+    border:none;
+    background:transparent;
+    cursor:pointer;
+    font-size:18px;
+    color:var(--ink-soft);
+    align-self:flex-start;
+  }
+  footer{
+    padding:14px 32px 24px;
+    text-align:center;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    letter-spacing:.03em;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <header>
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <h1>Slice &amp; Learn</h1>
+        <p>Fraction Pizza Game</p>
+      </div>
+    </div>
+    <div class="score">
+      <div class="num" id="scoreNum">0</div>
+      <div class="lbl">Correct Slices</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="plate-wrap">
+      <div class="target-line">Level <span id="levelNum">1</span> — Make <b id="targetFraction">1/2</b></div>
+      <div class="plate">
+        <svg id="pieSvg" viewBox="0 0 300 300"></svg>
+      </div>
+      <div class="fraction-readout">
+        <span id="currentNum">0</span>
+        <span class="bar"><span class="rule"></span></span>
+        <span id="currentDen">4</span>
+      </div>
+      <div class="controls">
+        <button class="btn add" id="addBtn">➕ Add Piece</button>
+        <button class="btn remove" id="removeBtn">➖ Remove Piece</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div>
+        <h2>Your goal</h2>
+        <p class="sub">Add or remove slices until your pizza matches the target fraction, then check your answer.</p>
+      </div>
+      <div class="levelbar" id="levelBar"></div>
+      <button class="check-btn" id="checkBtn">Check My Answer</button>
+      <div class="feedback" id="feedback">
+        <span class="icon">🍕</span>
+        <span>Tap slices in or out, then hit check when you're ready.</span>
+      </div>
+      <button class="mute-btn" id="muteBtn" title="Toggle sound">🔊 Sound on</button>
+    </div>
+  </main>
+
+  <footer>Circular fraction model · Built for the Interactive Fraction Game assignment</footer>
+</div>
+
+<script>
+(function(){
+  // ---------- Levels ----------
+  const LEVELS = [
+    {den:2, num:1},
+    {den:4, num:3},
+    {den:3, num:2},
+    {den:6, num:5},
+    {den:8, num:3},
+    {den:5, num:4},
+    {den:6, num:1},
+    {den:8, num:7},
+  ];
+
+  let levelIndex = 0;
+  let shadedCount = 0;
+  let score = 0;
+  let soundOn = true;
+
+  const svg = document.getElementById('pieSvg');
+  const targetFractionEl = document.getElementById('targetFraction');
+  const levelNumEl = document.getElementById('levelNum');
+  const currentNumEl = document.getElementById('currentNum');
+  const currentDenEl = document.getElementById('currentDen');
+  const addBtn = document.getElementById('addBtn');
+  const removeBtn = document.getElementById('removeBtn');
+  const checkBtn = document.getElementById('checkBtn');
+  const feedbackEl = document.getElementById('feedback');
+  const scoreNumEl = document.getElementById('scoreNum');
+  const levelBarEl = document.getElementById('levelBar');
+  const muteBtn = document.getElementById('muteBtn');
+
+  // ---------- Sound (Web Audio, no external files) ----------
+  let audioCtx = null;
+  function ctx(){
+    if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+    return audioCtx;
+  }
+  function beep(freq, dur, type, gain){
+    if(!soundOn) return;
+    try{
+      const c = ctx();
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.value = freq;
+      g.gain.value = gain || 0.08;
+      osc.connect(g); g.connect(c.destination);
+      osc.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+      osc.stop(c.currentTime + dur);
+    }catch(e){}
+  }
+  function sfxAdd(){ beep(520, 0.12, 'triangle', 0.09); }
+  function sfxRemove(){ beep(300, 0.12, 'sawtooth', 0.07); }
+  function sfxCorrect(){ beep(660,0.14,'sine',0.1); setTimeout(()=>beep(880,0.18,'sine',0.1),120); }
+  function sfxWrong(){ beep(180,0.22,'square',0.08); }
+
+  muteBtn.addEventListener('click', ()=>{
+    soundOn = !soundOn;
+    muteBtn.textContent = soundOn ? '🔊 Sound on' : '🔇 Sound off';
+  });
+
+  // ---------- Pie rendering ----------
+  const CX=150, CY=150, R=140, R_INNER=54;
+
+  function polarToXY(cx, cy, r, angleDeg){
+    const a = (angleDeg-90) * Math.PI/180;
+    return [cx + r*Math.cos(a), cy + r*Math.sin(a)];
+  }
+
+  function sliceWedgePath(cx, cy, rOuter, rInner, startAngle, endAngle){
+    const [x1,y1] = polarToXY(cx,cy,rOuter,startAngle);
+    const [x2,y2] = polarToXY(cx,cy,rOuter,endAngle);
+    const [x3,y3] = polarToXY(cx,cy,rInner,endAngle);
+    const [x4,y4] = polarToXY(cx,cy,rInner,startAngle);
+    const largeArc = (endAngle-startAngle) > 180 ? 1 : 0;
+    return `M ${x1} ${y1} A ${rOuter} ${rOuter} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${rInner} ${rInner} 0 ${largeArc} 0 ${x4} ${y4} Z`;
+  }
+
+  let sliceEls = [];
+
+  function buildPlate(den){
+    svg.innerHTML = '';
+    sliceEls = [];
+    const step = 360/den;
+    for(let i=0;i<den;i++){
+      const start = i*step;
+      const end = (i+1)*step;
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', sliceWedgePath(CX,CY,R,R_INNER,start,end));
+      path.setAttribute('class','slice');
+      path.setAttribute('fill', '#F3E4CE');
+      path.setAttribute('stroke', '#C97B3D');
+      path.setAttribute('stroke-width', '2.5');
+      path.dataset.index = i;
+      path.dataset.shaded = 'false';
+      path.addEventListener('click', ()=> toggleSliceDirect(i));
+      svg.appendChild(path);
+      sliceEls.push(path);
+    }
+    // crust ring
+    const ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    ring.setAttribute('cx',CX); ring.setAttribute('cy',CY); ring.setAttribute('r',R);
+    ring.setAttribute('fill','none'); ring.setAttribute('stroke','#A45F29'); ring.setAttribute('stroke-width','3');
+    svg.appendChild(ring);
+  }
+
+  function paintSlices(){
+    sliceEls.forEach((el, i)=>{
+      const shaded = i < shadedCount;
+      el.dataset.shaded = shaded ? 'true':'false';
+      el.setAttribute('fill', shaded ? '#E8543E' : '#F3E4CE');
+    });
+    currentNumEl.textContent = shadedCount;
+  }
+
+  // Clicking a specific slice: shade if unshaded (acts like Add if it's the first unshaded),
+  // unshade if shaded (acts like Remove if it's the last shaded). Keeps model consistent
+  // with the "first unshaded / last shaded" rule from the spec.
+  function toggleSliceDirect(i){
+    const den = LEVELS[levelIndex].den;
+    if(i < shadedCount){
+      // only allow removing if it's the last shaded piece
+      if(i === shadedCount-1){ removePiece(); }
+    } else {
+      if(i === shadedCount){ addPiece(); }
+    }
+  }
+
+  function addPiece(){
+    const den = LEVELS[levelIndex].den;
+    if(shadedCount >= den) return;
+    shadedCount++;
+    paintSlices();
+    sfxAdd();
+    clearFeedback();
+  }
+
+  function removePiece(){
+    if(shadedCount <= 0) return;
+    shadedCount--;
+    paintSlices();
+    sfxRemove();
+    clearFeedback();
+  }
+
+  function clearFeedback(){
+    feedbackEl.className = 'feedback';
+    feedbackEl.innerHTML = '<span class="icon">🍕</span><span>Tap slices in or out, then hit check when you\'re ready.</span>';
+  }
+
+  function renderLevelBar(){
+    levelBarEl.innerHTML = '';
+    LEVELS.forEach((_, i)=>{
+      const d = document.createElement('div');
+      d.className = 'dot' + (i < levelIndex ? ' done' : (i===levelIndex ? ' current':''));
+      levelBarEl.appendChild(d);
+    });
+  }
+
+  function loadLevel(i){
+    const lvl = LEVELS[i];
+    shadedCount = 0;
+    buildPlate(lvl.den);
+    paintSlices();
+    targetFractionEl.textContent = lvl.num + '/' + lvl.den;
+    currentDenEl.textContent = lvl.den;
+    levelNumEl.textContent = i+1;
+    renderLevelBar();
+    clearFeedback();
+  }
+
+  function checkAnswer(){
+    const lvl = LEVELS[levelIndex];
+    if(shadedCount === lvl.num){
+      score++;
+      scoreNumEl.textContent = score;
+      feedbackEl.className = 'feedback good';
+      feedbackEl.innerHTML = '<span class="icon">🎉</span><span>Correct! ' + lvl.num + '/' + lvl.den + ' is exactly what you built.</span>';
+      sfxCorrect();
+      setTimeout(()=>{
+        if(levelIndex < LEVELS.length-1){
+          levelIndex++;
+          loadLevel(levelIndex);
+        } else {
+          feedbackEl.className='feedback good';
+          feedbackEl.innerHTML = '<span class="icon">🏆</span><span>All levels complete! Final score: '+score+'/'+LEVELS.length+'.</span>';
+        }
+      }, 1100);
+    } else {
+      feedbackEl.className = 'feedback bad';
+      const hint = shadedCount > lvl.num ? 'Try removing a slice.' : 'Try adding a slice.';
+      feedbackEl.innerHTML = '<span class="icon">🤔</span><span>Not quite — you have ' + shadedCount + '/' + lvl.den + '. ' + hint + '</span>';
+      sfxWrong();
+    }
+  }
+
+  addBtn.addEventListener('click', addPiece);
+  removeBtn.addEventListener('click', removePiece);
+  checkBtn.addEventListener('click', checkAnswer);
+
+  loadLevel(0);
+})();
+</script>
+</body>
+</html>
